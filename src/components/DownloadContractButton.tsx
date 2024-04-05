@@ -26,7 +26,7 @@ export function DownloadContractButton({
 }: DownloadContractButtonProps) {
   const generateDocument = () => {
     loadFile(
-      'src/templates/modelo.docx',
+      '/templates/modelo.docx',
       function (error: Error | null, content: LoadData) {
         if (error) {
           throw error
