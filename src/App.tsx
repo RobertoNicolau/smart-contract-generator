@@ -5,13 +5,12 @@ import { maskCPF } from './helpers/maskCPF';
 import { DataModel } from './interfaces/cnpj';
 import { ClientData } from './components/ClientData';
 import { SpinnerGap } from 'phosphor-react';
-import { format } from 'date-fns';
+import { parse, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { maskDate } from './helpers/maskDate';
 
 function formatDateToWords(date: string) {
-  const [day, month, year] = date.split('/');
-  const parsedDate = new Date(`${year}-${month}-${day}`);
+  const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
   return format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 }
 
@@ -139,6 +138,11 @@ function App() {
             onChange={handleDateChange}
             className="rounded-lg p-2 border border-gray-300 ring-indigo-500 focus:ring-2 focus:outline-none w-full text-center text-xl font-bold text-slate-700"
           />
+          {formattedDate && (
+            <p className="text-slate-50 text-center text-lg font-semibold">
+              {formattedDate}
+            </p>
+          )}
         </div>
       </div>
 
