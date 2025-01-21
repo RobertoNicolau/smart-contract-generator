@@ -1,4 +1,4 @@
-export function maskDate(value) {
+export function maskDate(value: string) {
   if (!value) return '';
 
   const onlyNumbers = value.replace(/\D/g, '');

@@ -1,4 +1,4 @@
-export function maskCPF(value) {
+export function maskCPF(value: string) {
     if (!value) return '';
   
     const onlyNumbers = value.replace(/\D/g, '');

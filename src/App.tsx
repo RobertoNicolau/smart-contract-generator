@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { maskDate } from './helpers/maskDate';
 
-function formatDateToWords(date) {
+function formatDateToWords(date: string) {
   const [day, month, year] = date.split('/');
   const parsedDate = new Date(`${year}-${month}-${day}`);
   return format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -62,7 +62,7 @@ function App() {
     }
   };
 
-  const handleInputChange = (event) => {
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     const onlyNumbers = value.replace(/[^\d]+/g, '');
   
@@ -79,7 +79,7 @@ function App() {
     setCnpj(onlyNumbers); // Atualiza o CNPJ, mesmo durante a digitação
   };
 
-  const handleDateChange = (event) => {
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     setSignatureDate(value);
     if (value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
