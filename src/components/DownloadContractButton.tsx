@@ -3,8 +3,14 @@ import PizZip, { LoadData } from 'pizzip'
 import { saveAs } from 'file-saver'
 
 import { DataModel } from '../interfaces/cnpj'
+import { maskCNPJ } from '../helpers/maskCNPJ'
+import { maskCPF } from '../helpers/maskCPF'
 interface DownloadContractButtonProps {
   company: DataModel
+  data_primeira_assinatura: string
+  nome_representante: string
+  cpf_representante: string
+  cantSubmit: boolean
 }
 
 let PizZipUtils: any = null
@@ -23,10 +29,14 @@ function loadFile(
 
 export function DownloadContractButton({
   company,
+  data_primeira_assinatura,
+  nome_representante,
+  cpf_representante,
+  cantSubmit,
 }: DownloadContractButtonProps) {
   const generateDocument = () => {
     loadFile(
-      '/templates/modelo.docx',
+      '/templates/modelo1.docx',
       function (error: Error | null, content: LoadData) {
         if (error) {
           throw error
@@ -38,15 +48,11 @@ export function DownloadContractButton({
         })
         // render the document (replace all occurences of {cnpj} by company?.cnpj, {razao_social} by company?.razao_social, ...)
         doc.render({
-          cnpj: company?.cnpj,
+          cnpj_imobiliaria: maskCNPJ(company?.cnpj),
           razao_social: company?.razao_social,
-          endereco: `${company?.logradouro}, ${company?.numero}, ${company?.complemento}, ${company?.bairro}`,
-          cep: company?.cep || '',
-          municipio: company?.municipio || '',
-          uf: company?.uf || '',
-          ddd_telefone_1: company?.ddd_telefone_1 || '',
-          ddd_telefone_2: company?.ddd_telefone_2 || '',
-          email: company?.email || '',
+          data_primeira_assinatura,
+          nome_representante,
+          cpf_representante: maskCPF(cpf_representante),
         })
         const blob = doc.getZip().generate({
           type: 'blob',
@@ -61,10 +67,13 @@ export function DownloadContractButton({
 
   return (
     <button
-      className="bg-blue-500 text-white font-semibold px-4 py-2 rounded-md"
+      className={`${
+        cantSubmit ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-blue-500 text-white'
+      } font-semibold px-4 py-2 rounded-md`}
       onClick={generateDocument}
+      disabled={cantSubmit}
     >
-      Download Contract
+      Baixar Contrato
     </button>
   )
 }

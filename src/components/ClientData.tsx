@@ -5,9 +5,18 @@ import { DownloadContractButton } from './DownloadContractButton'
 
 interface ClientDataProps {
   company: DataModel
+  data_primeira_assinatura: string
+  nome_representante: string
+  cpf_representante: string
+  cantSubmit: boolean
 }
 
-export function ClientData({ company }: ClientDataProps) {
+export function ClientData({ company,
+                              data_primeira_assinatura,
+                              nome_representante,
+                              cpf_representante,
+                              cantSubmit
+}: ClientDataProps) {
   return (
     <div className="bg-white shadow-xl rounded-xl w-full h-full p-16 flex flex-col">
       <header className="pb-10">
@@ -100,7 +109,12 @@ export function ClientData({ company }: ClientDataProps) {
           </p>
           <p className="text-slate-500">{company.email}</p>
         </div>
-        <DownloadContractButton company={company} />
+        <DownloadContractButton company={company} 
+                                data_primeira_assinatura={data_primeira_assinatura}
+                                nome_representante={nome_representante}
+                                cpf_representante={cpf_representante}
+                                cantSubmit={cantSubmit}
+        />
       </div>
     </div>
   )

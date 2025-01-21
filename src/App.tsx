@@ -1,138 +1,163 @@
-import { useState, useEffect } from 'react'
-import { validateCNPJ } from './helpers/validateCNPJ'
-import { DataModel } from './interfaces/cnpj'
-import { maskCNPJ } from './helpers/maskCNPJ'
-import { ClientData } from './components/ClientData'
-import { SpinnerGap } from 'phosphor-react'
-// import { Modal } from './components/Modal'
+import { useState, useEffect } from 'react';
+import { validateCNPJ } from './helpers/validateCNPJ';
+import { maskCNPJ } from './helpers/maskCNPJ';
+import { maskCPF } from './helpers/maskCPF';
+import { DataModel } from './interfaces/cnpj';
+import { ClientData } from './components/ClientData';
+import { SpinnerGap } from 'phosphor-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { maskDate } from './helpers/maskDate';
 
-// https://brasilapi.com.br/api/cnpj/v1/03336489000165
+function formatDateToWords(date) {
+  const [day, month, year] = date.split('/');
+  const parsedDate = new Date(`${year}-${month}-${day}`);
+  return format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+}
 
 function App() {
-  const [cnpj, setCnpj] = useState('')
-  const [result, setResult] = useState<DataModel>()
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState('')
+  const [cnpj, setCnpj] = useState('');
+  const [representativeName, setRepresentativeName] = useState('');
+  const [representativeCpf, setRepresentativeCpf] = useState('');
+  const [signatureDate, setSignatureDate] = useState('');
+  const [formattedDate, setFormattedDate] = useState('');
+  const [result, setResult] = useState<DataModel>();
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSearch = async () => {
-    setLoading(true)
-    if (!validateCNPJ(cnpj)) return
-    const response = await fetch(
-      `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      },
-    )
-      .then((res) => res.json())
-      .then((data) => data)
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false))
-
-    if (response.status === 404) {
-      setError('CNPJ não encontrado')
-      setLoading(false)
-      setSearch('')
-      return
+    setLoading(true);
+    if (!validateCNPJ(cnpj)) {
+      setError('CNPJ inválido');
+      setLoading(false);
+      return;
     }
 
-    if (response.status === 429) {
-      setError('Limite de requisições atingido')
-      setLoading(false)
-      setSearch('')
-      return
+    try {
+      const response = await fetch(
+        `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data) {
+        setError('CNPJ não encontrado');
+        setResult(undefined);
+      } else {
+        setResult(data);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Erro ao buscar o CNPJ');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (response.status === 500) {
-      setError('Erro interno no servidor')
-      setLoading(false)
-      setSearch('')
-      return
+  const handleInputChange = (event) => {
+    const { value } = event.target;
+    const onlyNumbers = value.replace(/[^\d]+/g, '');
+  
+    if (onlyNumbers.length === 14) {
+      if (!validateCNPJ(onlyNumbers)) {
+        setError('CNPJ inválido');
+        setCnpj(onlyNumbers); // Mantenha o valor para permitir edição
+        return;
+      }
+      setSearch(onlyNumbers); // Apenas busca se for válido
+      setError('');
     }
+  
+    setCnpj(onlyNumbers); // Atualiza o CNPJ, mesmo durante a digitação
+  };
 
-    if (response.status === 503) {
-      setError('Serviço indisponível')
-      setLoading(false)
-      setSearch('')
-      return
+  const handleDateChange = (event) => {
+    const { value } = event.target;
+    setSignatureDate(value);
+    if (value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      setFormattedDate(formatDateToWords(value));
+    } else {
+      setFormattedDate('');
     }
+  };
 
-    setResult(response)
-    setLoading(false)
-  }
+  // Verifica se todos os campos estão preenchidos:
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.preventDefault()
-    const { value } = event.target
-    const onlyNumbers = value.replace(/[^\d]+/g, '')
-
-    if (onlyNumbers.length === 14 && !validateCNPJ(onlyNumbers)) {
-      setError('CNPJ inválido')
-      setSearch('')
-      return
-    }
-
-    if (onlyNumbers.length === 0 && search.length > 0) {
-      setError('')
-      setSearch('')
-      setLoading(false)
-      setResult(undefined)
-      setCnpj('')
-    }
-
-    setCnpj(onlyNumbers)
-    onlyNumbers.length === 14 && setSearch(onlyNumbers)
-    setError('')
-  }
+  const cantSubmit = !cnpj || !representativeName || !representativeCpf || !signatureDate || !!error;
 
   useEffect(() => {
-    if (search.length === 0) return
-
-    handleSearch()
-    return () => {
-      setLoading(false)
-      // cleanup
-    }
-  }, [search])
+    if (search.length === 0) return;
+    handleSearch();
+  }, [search]);
 
   return (
     <main className="grid grid-cols-2 bg-gradient-to-r from-sky-500 to-indigo-500">
-      {/* // <main className="grid grid-cols-2 bg-[url('https://images.unsplash.com/photo-1613310023042-ad79320c00ff?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')]"> */}
-
-      {/* Search */}
+      {/* Input Section */}
       <div className="min-h-screen w-full flex flex-col items-center justify-center gap-5">
         <h1 className="text-5xl font-bold text-slate-50">Smart Generator</h1>
-        <div className="w-96">
+
+        <div className="w-96 flex flex-col gap-4">
           <input
             value={maskCNPJ(cnpj)}
             type="text"
-            name="search-input"
-            id="search-input"
+            placeholder="CNPJ"
             maxLength={18}
             onChange={handleInputChange}
+            className="rounded-lg p-2 border border-gray-300 ring-indigo-500 focus:ring-2 focus:outline-none w-full text-center text-xl font-bold text-slate-700"
+          />
+
+          <input
+            value={representativeName}
+            type="text"
+            placeholder="Nome do Representante"
+            onChange={(e) => setRepresentativeName(e.target.value)}
+            className="rounded-lg p-2 border border-gray-300 ring-indigo-500 focus:ring-2 focus:outline-none w-full text-center text-xl font-bold text-slate-700"
+          />
+
+          <input
+            value={maskCPF(representativeCpf)}
+            type="text"
+            placeholder="CPF do Representante"
+            maxLength={14}
+            onChange={(e) => setRepresentativeCpf(e.target.value.replace(/[^\d]+/g, ''))}
+            className="rounded-lg p-2 border border-gray-300 ring-indigo-500 focus:ring-2 focus:outline-none w-full text-center text-xl font-bold text-slate-700"
+          />
+
+          <input
+            value={maskDate(signatureDate)}
+            type="text"
+            placeholder="Data de Assinatura (DD/MM/AAAA)"
+            maxLength={10}
+            onChange={handleDateChange}
             className="rounded-lg p-2 border border-gray-300 ring-indigo-500 focus:ring-2 focus:outline-none w-full text-center text-xl font-bold text-slate-700"
           />
         </div>
       </div>
 
-      {/* Result */}
+      {/* Result Section */}
       <div className="min-h-screen w-full flex flex-col items-center justify-center gap-5 p-16">
-        <>
-          {loading === true ? (
-            <SpinnerGap size={164} color="white" className="animate-spin" />
-          ) : (
-            // <Modal />
-            <>{result && <ClientData company={result} />}</>
-          )}
-        </>
-        <div>{error && <p>{error}</p>}</div>
+        {loading ? (
+          <SpinnerGap size={164} color="white" className="animate-spin" />
+        ) : (
+          result && <ClientData company={result}
+                                data_primeira_assinatura={formattedDate}
+                                nome_representante={representativeName}
+                                cpf_representante={representativeCpf}
+                                cantSubmit={cantSubmit}
+           />
+        )}
+        {error && <p className="text-red-500">{error}</p>}
       </div>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
